@@ -9,7 +9,7 @@
 #include "cpr/cpr.h"
 #include "gumbo.h"
 
-int NUM_TOKENS = 6;
+int NUM_TOKENS = 15;
 
 std::atomic<int> visited_pages_num{ 0 };
 std::atomic<int> total_requests{ 0 };
@@ -84,16 +84,16 @@ public:
     std::string operator()(std::string input) const {
         if (input.empty()) return std::string();
 
-        cpr::Url url = cpr::Url{ input };
-
+        cpr::Session session;
+        session.SetUrl(cpr::Url{ input });
+        session.SetConnectTimeout(cpr::ConnectTimeout(connect_timeout_ms));
+        session.SetTimeout(cpr::Timeout(total_timeout_ms));
         
        visited_pages_num++;
 
         for (int attempt = 0; attempt <= max_retries; ++attempt) {
 
-            cpr::Response response = cpr::Get(url,
-                                            cpr::ConnectTimeout( connect_timeout_ms ),
-                                            cpr::Timeout( total_timeout_ms ));
+            cpr::Response response = session.Get();
             total_requests++;
 
             if (response.error.code == cpr::ErrorCode::OK) { // Da li je došlo do problema u transferu?
